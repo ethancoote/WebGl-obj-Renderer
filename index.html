@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <title>WebGL Demo</title>
+    <link rel="stylesheet" href="./webgl.css" type="text/css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"
+      integrity="sha512-zhHQR0/H5SEBL3Wn6yYSaTTZej12z0hVZKOv3TwCUXT1z5qeqGcXJLLrbERYRScEDDpYIJhPC1fk31gqR783iQ=="
+      crossorigin="anonymous" defer>
+    </script>
+    <script src="loaddata.js" ></script>
+    <script src="webgl-demo.js" defer></script>
+
+  </head>
+
+
+  <body>
+      
+    <div>
+      <label for="files" class="btn">Choose '.obj' File</label>
+      <input id="files" type="file" onchange="readFile(this)">
+    </div>
+    <div>
+      <label for="files" class="btn">Choose '.ppm' File</label>
+      <input id="files" type="file" onchange="readFilePPM(this)">
+    </div>
+
+<script>
+// readin ppm file
+function readFilePPM(input) {
+  loaded = false;
+  let file = input.files[0];
+
+  let reader = new FileReader();
+
+  reader.readAsText(file);
+  count = 0;
+  reader.onload = function() {
+    // parse line of texture file
+    const lines = reader.result.split("\n");
+    for (i=0; i<lines.length; i++){
+      valString = lines[i].trim();
+      vals = valString.split(" ").filter(Boolean);
+      if (i == 2) {
+        width = Number(vals[0]);
+        height = Number(vals[1]);
+      } else if (i>3) {
+        if (count == 3){
+          texture.push(255);
+          count = 0;
+        }
+        texture.push(Number(vals[0]));
+        count += 1;
+      }
+    }
+    ppm = 1;
+    initGeometry();
+    loaded = true;
+    initAll();
+  };
+
+  reader.onerror = function() {
+    console.log(reader.error);
+  };
+
+}
+
+// reading obj file
+function readFile(input) {
+  let file = input.files[0];
+
+  let reader = new FileReader();
+
+  reader.readAsText(file);
+
+  reader.onload = function() {
+
+	// read the input files and organize the geometry and image
+	// data so it can be used to build the model
+    const lines = reader.result.split("\n");
+    let valString = "";
+    let vals = [];
+    let faceVals = [];
+    // parsing file
+    for (i=0; i<lines.length; i++){
+      valString = lines[i].trim();
+      vals = valString.split(" ").filter(Boolean);
+
+      // vertices 
+      if (vals[0] == 'v') {
+        vertices.push(vals[1]);
+        vertices.push(vals[2]);
+        vertices.push(vals[3]);
+
+      // texture
+      } else if (vals[0] == 'vt') {
+        textureCoords.push(Number(vals[1]));
+        textureCoords.push(Number(vals[2]));
+
+      // normals
+      } else if (vals[0] == 'vn') {
+        normals.push(vals[1]);
+        normals.push(vals[2]);
+        normals.push(vals[3]);
+
+      // faces
+      } else if (vals[0] == 'f') {
+        for (j=1; j<vals.length; j++){
+          faceVals = vals[j].split("/");
+          if (faceVals.length == 2) {
+            indices.push(faceVals[0]);
+            vt.push(faceVals[1]);
+            findNormals = 1;
+          } else if (faceVals.length == 3) {
+            indices.push(faceVals[0]);
+            vt.push(faceVals[1]);
+            vn.push(faceVals[2]);
+          }
+        }
+        
+      }
+    }
+	// build geometry from the input file
+    ppm = 0;
+    initGeometry();
+	// indicate that the geometry has been loaded and can be drawn
+    //loaded = true;
+	// strt WebGL
+    //initAll();
+  };
+
+  reader.onerror = function() {
+    console.log(reader.error);
+  };
+
+}
+</script>
+
+
+    <canvas id="glcanvas" width="1024" height="768"></canvas>
+  </body>
+
+</html>
